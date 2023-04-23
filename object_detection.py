@@ -3,16 +3,25 @@ import shutil
 from ultralytics import YOLO
 from PIL import Image
 from werkzeug.utils import secure_filename
-
-# Initialize Obeject Detector
-yolo_model = YOLO("object_detector/yolov8.pt")
+from urllib.request import urlopen
 
 # OBECT DETECTION FUNCTION
-def obejectDetection(imageFile, sentClassName):
-    # Load The Image
-    uploadedImage = Image.open(imageFile.stream)
 
-    uploadedImageName = secure_filename(imageFile.filename)
+
+def obejectDetection(sentClassName, imageFile=None, imageURL=None):
+    # Initialize Obeject Detector
+    yolo_model = YOLO("object_detector/yolov8.pt")
+    # Load The Image
+    if imageFile != None:
+        # for input image
+        uploadedImage = Image.open(imageFile.stream)
+        uploadedImageName = secure_filename(imageFile.filename)
+        croppedImageName = "."+uploadedImageName.split(".")[-1]+".jpg"
+    else:
+        # for retrieved images
+        uploadedImage = Image.open(urlopen(imageURL)).convert('RGB')
+        uploadedImageName = imageURL.split("/")[-1]
+        croppedImageName = "image0.jpg"
 
     print("Uploaded Image Name: "+uploadedImageName)
     # Note:results is an array and each element of this array is a single frame(image) detection
@@ -44,14 +53,13 @@ def obejectDetection(imageFile, sentClassName):
                     "classes": classNames,
                     "boundingBoxes": results[0].boxes.xywh.numpy()}
 
-        # send the predicted boundboxes and the classes to the user to choose from
-        # IF THE USER MADE A REQUEST BEFORE AND ALREADY SELECTED A CLASS
+        # IF THE USER MADE A REQUEST BEFORE AND ALREADY SELECTED A CLASS FIND THE CLASS HE SELECTED
+
         elif len(classNames) > 1 and sentClassName != None:
             for className in classNames:
                 if className == sentClassName:
                     predictedCroppedImagePath = "runs/"+uploadedImageName + \
-                        "/crops/" + className+"/" + \
-                        "."+uploadedImageName.split(".")[-1]+".jpg"
+                        "/crops/" + className+"/" + croppedImageName
                     croppedImage = Image.open(
                         predictedCroppedImagePath).convert('RGB')
                     # remove the directory after loading the image"
@@ -60,13 +68,15 @@ def obejectDetection(imageFile, sentClassName):
                     # replace _ with space to get search results
                     return {"className": sentClassName.replace("_", " "),
                             "croppedImage": croppedImage}
+                else:
+                    # IF THE CLASSNAME SENT WAS NOT FOUND RETURN NONE (THIS COULD HAPPEN FROM RETRIEVED IMAGES NOT FROM USER SIDE)
+                    return {"croppedImage": None}
 
         # IF THIS IS THE FIRST REQUEST BUT THERE IS ONLY ONE DETECTED CLASS
         else:
             # load cropped class image (AT THIS POINT YOU SHOULD KNOW WHICH CLASS THE USER WANT THEN ONLY LOAD ITS CROP OR IF ONLY 1 CLASS)
             predictedCroppedImagePath = "runs/"+uploadedImageName + \
-                "/crops/" + classNames[0]+"/" + \
-                "."+uploadedImageName.split(".")[-1]+".jpg"
+                "/crops/" + classNames[0]+"/" + croppedImageName
             croppedImage = Image.open(predictedCroppedImagePath).convert('RGB')
             # remove the directory after loading the image"
             shutil.rmtree('runs/'+uploadedImageName)

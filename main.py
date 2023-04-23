@@ -60,7 +60,8 @@ def getSimilarClothes():
         if image.filename == '':
             return jsonify({"errorMessage": "no selected image"})
         # call the object detection function
-        objectDetectionResult = obejectDetection(image, sentClassName)
+        objectDetectionResult = obejectDetection(
+            sentClassName, imageFile=image)
 
         if objectDetectionResult.get("noClothes") is not None:
             return jsonify({"errorMessage": "Your Image Doesn't Contain Visible Clothes"})
@@ -72,7 +73,7 @@ def getSimilarClothes():
         else:
             className = objectDetectionResult["className"]
             croppedImage = objectDetectionResult["croppedImage"]
-            print("new name "+className)
+            print("new name: "+className)
 
             # getting feature vector of the cropped clothes image
             _transforms = transforms.Compose(
@@ -91,7 +92,7 @@ def getSimilarClothes():
 
             # getting feature vectors of the retrieved clothes images
             URL = "https://unofficial-shein.p.rapidapi.com/products/search?keywords=" + \
-                className+"&language=en&country=EGY&sort="+sort+"&page="+page+"&limit=5"
+                className+"&language=en&country=EGY&sort="+sort+"&page="+page+"&limit=40"
 
             headers = {
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36',
@@ -110,24 +111,29 @@ def getSimilarClothes():
 
                 clothesImageUrl = product["goods_img"]
                 # extract features from each retrieved clothes image
-                retrievedImage = Image.open(
-                    urlopen(clothesImageUrl)).convert('RGB')
+                # call the object detection function
+                retrievedObjectDetectionResult = obejectDetection(
+                    className.replace(" ", "_"), imageURL=clothesImageUrl)
 
-                retrieved_image_matrix = np.asarray(
-                    np.expand_dims(_transforms(retrievedImage), 0))
-                retrieved_image_vector = vgg_model.features(
-                    torch.tensor(retrieved_image_matrix)).mean((2, 3))
+                retrievedCroppedImage = retrievedObjectDetectionResult["croppedImage"]
+                # if one the classes detected in retrieved images matches the class detected in input image or selected by user
+                if retrievedCroppedImage is not None:
 
-                # get the cosine similarity
-                cosine_similarity = torch.cosine_similarity(
-                    input_image_vector, retrieved_image_vector)
-                string_cosine_similarity = str(
-                    cosine_similarity)[8:12]+" %"
-                print("Cosine Similarity of The Main Image and Image:" +
-                      product["goods_img"] + " is: " + string_cosine_similarity+" ")
-                # URL CONSISTS OF DOMA/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
-                if cosine_similarity > 0.75:
-                    print("MATCH")
+                    retrieved_image_matrix = np.asarray(
+                        np.expand_dims(_transforms(retrievedCroppedImage), 0))
+                    retrieved_image_vector = vgg_model.features(
+                        torch.tensor(retrieved_image_matrix)).mean((2, 3))
+
+                    # get the cosine similarity
+                    cosine_similarity = torch.cosine_similarity(
+                        input_image_vector, retrieved_image_vector)
+                    string_cosine_similarity = str(
+                        cosine_similarity)[8:12]+" %"
+                    print("Cosine Similarity of The Main Image and Image:" +
+                          product["goods_img"] + " is: " + string_cosine_similarity+" ")
+                    # URL CONSISTS OF DOMA/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
+                    if cosine_similarity > 0.7:
+                        print("MATCH")
 
             return jsonify({"successMessage": "Done Searching"})
 
