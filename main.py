@@ -10,7 +10,7 @@ from urllib.request import urlopen
 import json
 import requests
 from dotenv import load_dotenv
-# from object_detection import obejectDetection
+from object_detection import obejectDetection
 
 global embed
 
