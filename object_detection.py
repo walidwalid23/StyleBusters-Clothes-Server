@@ -3,7 +3,7 @@ import shutil
 from ultralytics import YOLO
 from PIL import Image
 from werkzeug.utils import secure_filename
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 # OBECT DETECTION FUNCTION
 
@@ -11,6 +11,7 @@ from urllib.request import urlopen
 def obejectDetection(sentClassName, imageFile=None, imageURL=None):
     # Initialize Obeject Detector
     yolo_model = YOLO("object_detector/yolov8.pt")
+
     # Load The Image
     if imageFile != None:
         # for input image
@@ -18,8 +19,14 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
         uploadedImageName = secure_filename(imageFile.filename)
         croppedImageName = "."+uploadedImageName.split(".")[-1]+".jpg"
     else:
+        # some URLS has no protocols attached
+        if imageURL.split("/")[0] == "":
+            imageURL = "https:"+imageURL
+        # change user agent
+        req = Request(url=imageURL,
+                      headers={'User-Agent': 'Mozilla/5.0'})
         # for retrieved images
-        uploadedImage = Image.open(urlopen(imageURL)).convert('RGB')
+        uploadedImage = Image.open(urlopen(req)).convert('RGB')
         uploadedImageName = imageURL.split("/")[-1]
         croppedImageName = "image0.jpg"
 

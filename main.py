@@ -92,10 +92,10 @@ def getSimilarClothes():
 
             # getting feature vectors of the retrieved clothes images
             URL = "https://unofficial-shein.p.rapidapi.com/products/search?keywords=" + \
-                className+"&language=en&country=EGY&sort="+sort+"&page="+page+"&limit=40"
+                className+"&language=en&country=EGY&sort="+sort+"&page="+page+"&limit=300"
 
             headers = {
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36',
+                'user-agent': 'Mozilla/5.0',
                 "X-RapidAPI-Key": "a6c2c31630msh991be42e1cce8e5p1ec51ejsn2ad953cf202e",
                 "X-RapidAPI-Host": "unofficial-shein.p.rapidapi.com"
             }
@@ -104,37 +104,47 @@ def getSimilarClothes():
             jsonResponse = json.loads(response.text)
             # print(jsonResponse)
             products = jsonResponse["info"]["products"]
+            results = []
 
             print(products)
 
             for product in products:
-
                 clothesImageUrl = product["goods_img"]
                 # extract features from each retrieved clothes image
                 # call the object detection function
                 retrievedObjectDetectionResult = obejectDetection(
                     className.replace(" ", "_"), imageURL=clothesImageUrl)
+                # if there are clothes detections pass
+                if objectDetectionResult.get("noClothes") is not None:
+                    print("no clothes detected")
+                    pass
+                elif "croppedImage" in retrievedObjectDetectionResult:
+                    print("searching")
+                    retrievedCroppedImage = retrievedObjectDetectionResult["croppedImage"]
+                    # if atleast one the classes detected in retrieved images matches the class detected in input image or selected by user
+                    if retrievedCroppedImage != None:
 
-                retrievedCroppedImage = retrievedObjectDetectionResult["croppedImage"]
-                # if one the classes detected in retrieved images matches the class detected in input image or selected by user
-                if retrievedCroppedImage is not None:
+                        retrieved_image_matrix = np.asarray(
+                            np.expand_dims(_transforms(retrievedCroppedImage), 0))
+                        retrieved_image_vector = vgg_model.features(
+                            torch.tensor(retrieved_image_matrix)).mean((2, 3))
 
-                    retrieved_image_matrix = np.asarray(
-                        np.expand_dims(_transforms(retrievedCroppedImage), 0))
-                    retrieved_image_vector = vgg_model.features(
-                        torch.tensor(retrieved_image_matrix)).mean((2, 3))
+                        # get the cosine similarity
+                        cosine_similarity = torch.cosine_similarity(
+                            input_image_vector, retrieved_image_vector)
+                        string_cosine_similarity = str(
+                            cosine_similarity)[8:12]+" %"
+                        # print("Cosine Similarity of The Main Image and Image:" +
+                        #      product["goods_img"] + " is: " + string_cosine_similarity+" ")
+                        # URL CONSISTS OF DOMA/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
+                        if cosine_similarity > 0.7:
+                            print("found a match")
+                            results.append({"imageURL": product["goods_img"],
+                                            "accuracy": cosine_similarity})
 
-                    # get the cosine similarity
-                    cosine_similarity = torch.cosine_similarity(
-                        input_image_vector, retrieved_image_vector)
-                    string_cosine_similarity = str(
-                        cosine_similarity)[8:12]+" %"
-                    print("Cosine Similarity of The Main Image and Image:" +
-                          product["goods_img"] + " is: " + string_cosine_similarity+" ")
-                    # URL CONSISTS OF DOMA/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
-                    if cosine_similarity > 0.7:
-                        print("MATCH")
-
+            for result in results:
+                print("result: "+str(result["imageURL"]) +
+                      " Accuracy: "+str(result["accuracy"]))
             return jsonify({"successMessage": "Done Searching"})
 
     else:
