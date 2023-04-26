@@ -148,12 +148,6 @@ def getSimilarClothes():
                                             "productURL": productURL,
                                             "accuracy": string_cosine_similarity})
 
-                            print({"imageURL": product["goods_img"],
-                                   "productName": product["goods_name"],
-                                   "productPrice": product["retailPrice"]["amountWithSymbol"],
-                                   "productURL": productURL,
-                                   "accuracy": string_cosine_similarity})
-
             shutil.rmtree('runs')
 
             return jsonify({"successMessage": "Done Searching",
