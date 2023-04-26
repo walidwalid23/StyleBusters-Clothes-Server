@@ -26,7 +26,7 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
         req = Request(url=imageURL,
                       headers={'User-Agent': 'Mozilla/5.0'})
         # for retrieved images
-        uploadedImage = Image.open(urlopen(req)).convert('RGB')
+        uploadedImage = Image.open(urlopen(req, timeout=20)).convert('RGB')
         uploadedImageName = imageURL.split("/")[-1]
         croppedImageName = "image0.jpg"
 

@@ -11,6 +11,7 @@ import json
 import requests
 from dotenv import load_dotenv
 from object_detection import obejectDetection
+import shutil
 
 global embed
 
@@ -92,7 +93,7 @@ def getSimilarClothes():
 
             # getting feature vectors of the retrieved clothes images
             URL = "https://unofficial-shein.p.rapidapi.com/products/search?keywords=" + \
-                className+" For "+gender+"&language=en&country=EGY&sort=0&page="+page+"&limit=300"
+                className+" For "+gender+"&language=en&country=EG&sort=0&page="+page+"&limit=300"
 
             headers = {
                 'user-agent': 'Mozilla/5.0',
@@ -152,6 +153,8 @@ def getSimilarClothes():
                                    "productPrice": product["retailPrice"]["amountWithSymbol"],
                                    "productURL": productURL,
                                    "accuracy": string_cosine_similarity})
+
+            shutil.rmtree('runs')
 
             return jsonify({"successMessage": "Done Searching",
                             "results": results})
