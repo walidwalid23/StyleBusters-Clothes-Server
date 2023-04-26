@@ -50,7 +50,7 @@ def root():
 def getSimilarClothes():
     print("in route")
     image = request.files['image']
-    sort = request.form['sort']
+    gender = request.form['gender']
     page = request.form['page']
     sentClassName = request.form['className'] if 'className' in request.form else None
 
@@ -92,7 +92,7 @@ def getSimilarClothes():
 
             # getting feature vectors of the retrieved clothes images
             URL = "https://unofficial-shein.p.rapidapi.com/products/search?keywords=" + \
-                className+"&language=en&country=EGY&sort="+sort+"&page="+page+"&limit=300"
+                className+" For "+gender+"&language=en&country=EGY&sort=0&page="+page+"&limit=300"
 
             headers = {
                 'user-agent': 'Mozilla/5.0',
@@ -119,7 +119,6 @@ def getSimilarClothes():
                     print("no clothes detected")
                     pass
                 elif "croppedImage" in retrievedObjectDetectionResult:
-                    print("searching")
                     retrievedCroppedImage = retrievedObjectDetectionResult["croppedImage"]
                     # if atleast one the classes detected in retrieved images matches the class detected in input image or selected by user
                     if retrievedCroppedImage != None:
@@ -136,16 +135,26 @@ def getSimilarClothes():
                             cosine_similarity)[8:12]+" %"
                         # print("Cosine Similarity of The Main Image and Image:" +
                         #      product["goods_img"] + " is: " + string_cosine_similarity+" ")
-                        # URL CONSISTS OF DOMA/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
-                        if cosine_similarity > 0.7:
+                        # URL CONSISTS OF DOMAIN/goods_url_name (with spaces replaced with -) + -p- + goods_id + -cat- + cat_id + .html
+                        if cosine_similarity > 0.65:
                             print("found a match")
-                            results.append({"imageURL": product["goods_img"],
-                                            "accuracy": cosine_similarity})
+                            productURL = "https://www.shein.com/"+product["goods_url_name"].replace(
+                                " ", "-")+"-p-"+product["goods_id"]+"-cat-" + product["cat_id"]+".html"
 
-            for result in results:
-                print("result: "+str(result["imageURL"]) +
-                      " Accuracy: "+str(result["accuracy"]))
-            return jsonify({"successMessage": "Done Searching"})
+                            results.append({"imageURL": product["goods_img"],
+                                            "productName": product["goods_name"],
+                                            "productPrice": product["retailPrice"]["amountWithSymbol"],
+                                            "productURL": productURL,
+                                            "accuracy": string_cosine_similarity})
+
+                            print({"imageURL": product["goods_img"],
+                                   "productName": product["goods_name"],
+                                   "productPrice": product["retailPrice"]["amountWithSymbol"],
+                                   "productURL": productURL,
+                                   "accuracy": string_cosine_similarity})
+
+            return jsonify({"successMessage": "Done Searching",
+                            "results": results})
 
     else:
         return jsonify(
