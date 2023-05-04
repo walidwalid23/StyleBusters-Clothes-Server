@@ -13,6 +13,7 @@ from io import BytesIO
 
 
 def obejectDetection(sentClassName, imageFile=None, imageURL=None):
+
     # Initialize Obeject Detector
     yolo_model = YOLO("object_detector/yolov8.pt")
 
@@ -27,7 +28,7 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
         if imageURL.split("/")[0] == "":
             imageURL = "https:"+imageURL
 
-        time.sleep(0.5)
+        time.sleep(0.3)
         response = requests.get(imageURL,
                                 headers={
                                     "accept": "*/*",
@@ -76,6 +77,7 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
     else:
         # IF SENTCLASSNAME=NULL THIS MEANS THAT THIS IS THE FIRST REQUEST THE USER MAKE THEREFORE WE SHOULD MAKE HIM CHOOSE
         if len(classNames) > 1 and sentClassName == None:
+            print("in multiclass")
             # remove the directory after loading the image"
             shutil.rmtree('runs/'+uploadedImageName)
             # return the classes to choose from and the bounding boxes to display on frontend
@@ -86,22 +88,22 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
         # IF THE USER MADE A REQUEST BEFORE AND ALREADY SELECTED A CLASS FIND THE CLASS HE SELECTED
 
         elif len(classNames) > 1 and sentClassName != None:
-            for className in classNames:
-                if className == sentClassName:
-                    predictedCroppedImagePath = "runs/"+uploadedImageName + \
-                        "/crops/" + className+"/" + croppedImageName
-                    croppedImage = Image.open(
-                        predictedCroppedImagePath).convert('RGB')
-                    # remove the directory after loading the image"
-                    shutil.rmtree('runs/'+uploadedImageName)
-                    # return the the class name and the cropped image
-                    # replace _ with space to get search results
-                    print("in here replaced: "+sentClassName.replace("_", " "))
-                    return {"className": sentClassName.replace("_", " "),
-                            "croppedImage": croppedImage}
-                else:
-                    # IF THE CLASSNAME SENT WAS NOT FOUND RETURN NONE (THIS COULD HAPPEN FROM RETRIEVED IMAGES NOT FROM USER SIDE)
-                    return {"croppedImage": None}
+
+            if sentClassName in classNames:
+                predictedCroppedImagePath = "runs/"+uploadedImageName + \
+                    "/crops/" + sentClassName + "/" + croppedImageName
+                croppedImage = Image.open(
+                    predictedCroppedImagePath).convert('RGB')
+                # remove the directory after loading the image"
+                shutil.rmtree('runs/'+uploadedImageName)
+                # return the the class name and the cropped image
+                # replace _ with space to get search results
+                print("in here replaced: "+sentClassName.replace("_", " "))
+                return {"className": sentClassName.replace("_", " "),
+                        "croppedImage": croppedImage}
+            else:
+                # IF THE CLASSNAME SENT WAS NOT FOUND RETURN NONE (THIS COULD HAPPEN FROM RETRIEVED IMAGES NOT FROM USER SIDE)
+                return {"croppedImage": None}
 
         # IF THIS IS THE FIRST REQUEST BUT THERE IS ONLY ONE DETECTED CLASS
         else:

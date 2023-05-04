@@ -54,6 +54,7 @@ def getSimilarClothes():
     gender = request.form['gender']
     page = request.form['page']
     sentClassName = request.form['className'] if 'className' in request.form and request.form['className'] != None else None
+    print("the sent class name is: "+str(sentClassName))
 
     if image and allowed_file(image.filename):
         session = requests.Session()
