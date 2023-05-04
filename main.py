@@ -53,7 +53,7 @@ def getSimilarClothes():
     image = request.files['image']
     gender = request.form['gender']
     page = request.form['page']
-    sentClassName = request.form['className'] if 'className' in request.form else None
+    sentClassName = request.form['className'] if 'className' in request.form and request.form['className'] != None else None
 
     if image and allowed_file(image.filename):
         session = requests.Session()
@@ -68,9 +68,11 @@ def getSimilarClothes():
             return jsonify({"errorMessage": "Your Image Doesn't Contain Visible Clothes"})
 
         elif objectDetectionResult.get("multiClass") is not None:
+
+            print(objectDetectionResult["classes"])
             return jsonify({"successMessage": "Image Contains More Than One Class",
                             "classes": objectDetectionResult["classes"],
-                            "boundingBoxes": objectDetectionResult["boundingBoxes"]})
+                            "boundingBoxes": objectDetectionResult["boundingBoxes"].tolist()})
         else:
             className = objectDetectionResult["className"]
             croppedImage = objectDetectionResult["croppedImage"]
@@ -93,7 +95,7 @@ def getSimilarClothes():
 
             # getting feature vectors of the retrieved clothes images
             URL = "https://unofficial-shein.p.rapidapi.com/products/search?keywords=" + \
-                className+" For "+gender+"&language=en&country=EG&sort=0&page="+page+"&limit=300"
+                className+" For "+gender+"&language=en&country=EG&sort=8&page="+page+"&limit=300"
 
             headers = {
                 'user-agent': 'Mozilla/5.0',
@@ -103,15 +105,15 @@ def getSimilarClothes():
 
             response = session.get(URL, headers=headers)
             jsonResponse = json.loads(response.text)
-            # print(jsonResponse)
+            print(jsonResponse)
             products = jsonResponse["info"]["products"]
             results = []
 
             print(products)
 
             for product in products:
-                clothesImageUrl = product["goods_img"]
-                # extract features from each retrieved clothes image
+                clothesImageUrl = product["goods_img_webp"]
+
                 # call the object detection function
                 retrievedObjectDetectionResult = obejectDetection(
                     className.replace(" ", "_"), imageURL=clothesImageUrl)
@@ -149,7 +151,7 @@ def getSimilarClothes():
                                             "accuracy": string_cosine_similarity})
 
             shutil.rmtree('runs')
-
+            print("done searching")
             return jsonify({"successMessage": "Done Searching",
                             "results": results})
 

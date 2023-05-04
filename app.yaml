@@ -28,8 +28,8 @@ automatic_scaling:
 
 resources:
   cpu: 1
-  memory_gb: 2
-  disk_size_gb: 30 
+  memory_gb: 3
+  disk_size_gb: 25 
 
 readiness_check:
   app_start_timeout_sec: 1800

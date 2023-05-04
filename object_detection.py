@@ -3,7 +3,11 @@ import shutil
 from ultralytics import YOLO
 from PIL import Image
 from werkzeug.utils import secure_filename
-from urllib.request import Request, urlopen
+import time
+import random
+import requests
+from io import BytesIO
+# from urllib.request import Request, urlopen
 
 # OBECT DETECTION FUNCTION
 
@@ -22,13 +26,32 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
         # some URLS has no protocols attached
         if imageURL.split("/")[0] == "":
             imageURL = "https:"+imageURL
-        # change user agent
-        req = Request(url=imageURL,
-                      headers={'User-Agent': 'Mozilla/5.0'})
+
+        time.sleep(0.5)
+        response = requests.get(imageURL,
+                                headers={
+                                    "accept": "*/*",
+                                    "accept-encoding": "gzip, deflate, br",
+                                    "accept-language": "en-US,en;q=0.9",
+                                    "content-length": "1116",
+                                    "content-type": "application/json",
+                                    "dnt": "1",
+                                    "ds-access-site": "shein",
+                                    "ds-access-token": "4bc3a2dd3549401b817438eede7e78da",
+                                    "origin": "https://www.shein.com",
+                                    "referer": "https://www.shein.com/",
+                                    "sec-ch-ua": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
+                                    "sec-ch-ua-mobile": '?0',
+                                    "sec-ch-ua-platform": "Windows",
+                                    "sec-fetch-dest": 'empty',
+                                    "sec-fetch-mode": 'cors',
+                                    "sec-fetch-site": 'cross-site',
+                                    "smdeviceid": 'WHJMrwNw1k/GqktZa8AsgAa5YfNF9SA6ZMa8sCqS8P55HWFwYUb9OXF38IaTn5CZ5hTZDhm4xXgbgYq5vu5s1xwOvlgVTFnvo8vXTJfyUYlPXYn5H0brntBRvPB5Vb+eRTZOJg5hGkZYfhwDCeHJsqFqRPoL7FhKirjl+d2XxfVhC/tBM9/prrNCpI3Tsb+2f7xWD7mkTFhfMAPkY9hDsQ63FgCnuHJJIaHViMcUtH25sMiwK8usc45fglP7Dmafde5685hmEETs=1487582755342',
+                                    "user-agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'})
         # for retrieved images
-        uploadedImage = Image.open(urlopen(req, timeout=20)).convert('RGB')
+        uploadedImage = Image.open(BytesIO(response.content))
         uploadedImageName = imageURL.split("/")[-1]
-        croppedImageName = "image0.jpg"
+        croppedImageName = ".jpg.jpg"
 
     print("Uploaded Image Name: "+uploadedImageName)
     # Note:results is an array and each element of this array is a single frame(image) detection
@@ -73,6 +96,7 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
                     shutil.rmtree('runs/'+uploadedImageName)
                     # return the the class name and the cropped image
                     # replace _ with space to get search results
+                    print("in here replaced: "+sentClassName.replace("_", " "))
                     return {"className": sentClassName.replace("_", " "),
                             "croppedImage": croppedImage}
                 else:
