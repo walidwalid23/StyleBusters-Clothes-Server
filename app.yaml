@@ -14,7 +14,7 @@
 
 runtime: python
 env: flex
-entrypoint: gunicorn -b :$PORT main:app
+entrypoint: gunicorn -t 0 -b :$PORT main:app
 # setting instance class doesn't make much change in flexible environments since in flexible we create our own instance class with
 # the customized resources needed for our app
 #instance_class: F4
