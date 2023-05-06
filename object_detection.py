@@ -36,6 +36,8 @@ def obejectDetection(sentClassName, imageFile=None, imageURL=None):
                                "origin": "https://www.shein.com",
                                "user-agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
                                'Connection': 'keep-alive',
+                               "sec-ch-ua": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
+                               "accept-language": "en-US,en;q=0.9"
 
                            })
 
